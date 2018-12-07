@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.rule.engine.node.filter;
+package org.thingsboard.rule.engine.node.enrichment;
 
 import lombok.Data;
 import org.thingsboard.rule.engine.api.NodeConfiguration;
 
+/**
+ * Created by mshvayka on 10.08.18.
+ */
 @Data
-public class TbKeyFilterNodeConfiguration implements NodeConfiguration<TbKeyFilterNodeConfiguration> {
-
-    private String key;
+public class TbGetEntityIdConfiguration implements NodeConfiguration<TbGetEntityIdConfiguration> {
+    private String outputKey;
 
     @Override
-    public TbKeyFilterNodeConfiguration defaultConfiguration() {
-        TbKeyFilterNodeConfiguration configuration = new TbKeyFilterNodeConfiguration();
-        configuration.setKey(null);
+    public TbGetEntityIdConfiguration defaultConfiguration() {
+        TbGetEntityIdConfiguration configuration = new TbGetEntityIdConfiguration();
+        configuration.setOutputKey("EntityId");
         return configuration;
     }
 }

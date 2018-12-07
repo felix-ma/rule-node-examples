@@ -13,55 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.rule.engine.node.filter;
+package org.thingsboard.rule.engine.node.enrichment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.rule.engine.api.*;
 import org.thingsboard.rule.engine.api.util.TbNodeUtils;
 import org.thingsboard.server.common.data.plugin.ComponentType;
 import org.thingsboard.server.common.msg.TbMsg;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-import static org.thingsboard.rule.engine.api.TbRelationTypes.FAILURE;
+import static org.thingsboard.rule.engine.api.TbRelationTypes.SUCCESS;
 
-
-@Slf4j
+/**
+ * Created by mshvayka on 10.08.18.
+ */
 @RuleNode(
-        type = ComponentType.FILTER,
-        name = "check key",
-        relationTypes = {"True", "False"},
-        configClazz = TbKeyFilterNodeConfiguration.class,
-        nodeDescription = "Checks the existence of the selected key in the message payload.",
-        nodeDetails = "If the selected key  exists - send Message via <b>True</b> chain, otherwise <b>False</b> chain is used.",
+        type = ComponentType.ENRICHMENT,
+        name = "get EntityId",
+        configClazz = TbGetEntityIdConfiguration.class,
+        nodeDescription = "获取当前消息的EntityId，如果是设备的话就是DeviceId",
+        nodeDetails = "如果outputkey设置的是EntityId，那么此节点会将数据存储到metadata.EntityId中，通过script节点可以改变数据到msg下",
         uiResources = {"static/rulenode/custom-nodes-config.js"},
-        configDirective = "tbFilterNodeCheckKeyConfig")
-public class TbKeyFilterNode implements TbNode {
+        configDirective = "tbEnrichmentNodeGetEntityIdConfig")
+public class TbGetEntityId implements TbNode {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-
-    private TbKeyFilterNodeConfiguration config;
-    private String key;
-
+    private TbGetEntityIdConfiguration config;
+    private String outputKey;
 
     @Override
-    public void init(TbContext tbContext, TbNodeConfiguration configuration) throws TbNodeException {
-        this.config = TbNodeUtils.convert(configuration, TbKeyFilterNodeConfiguration.class);
-        key = config.getKey();
+    public void init(TbContext ctx, TbNodeConfiguration configuration) throws TbNodeException {
+        this.config = TbNodeUtils.convert(configuration, TbGetEntityIdConfiguration.class);
+        outputKey = config.getOutputKey();
     }
+
 
     @Override
     public void onMsg(TbContext ctx, TbMsg msg) throws ExecutionException, InterruptedException, TbNodeException {
         try {
-            ctx.tellNext(msg, mapper.readTree(msg.getData()).has(key) ? "True" : "False");
-        } catch (IOException e) {
+            msg.getMetaData().putValue(outputKey, msg.getOriginator().getId().toString());
+            msg = ctx.newMsg(msg.getType(), msg.getOriginator(), msg.getMetaData(), msg.getData());
+            ctx.tellNext(msg, SUCCESS);
+        } catch (Exception e) {
             ctx.tellFailure(msg, e);
         }
     }
 
     @Override
     public void destroy() {
+
     }
 }
